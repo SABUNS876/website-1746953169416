@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Play Chess</title>
+<style>
+  /* Reset and base styles */
+  * {
+    box-sizing: border-box;
+  }
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  #wrapper {
+    max-width: 600px;
+    width: 100%;
+    height: 600px;
+    max-height: 600px;
+    background: #222;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+  #board {
+    flex-grow: 1;
+    width: 100%;
+  }
+  #status {
+    padding: 10px;
+    color: #eee;
+    text-align: center;
+    font-weight: 600;
+    background: #333;
+  }
+  /* Responsive for mobile */
+  @media (max-width: 400px) {
+    #wrapper {
+      height: 100vw;
+      max-height: 100vw;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="wrapper">
+  <div id="board"></div>
+  <div id="status">Loading chess board...</div>
+</div>
+
+<!-- Chessboard.js and Chess.js from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/1.0.0/chess.min.js" integrity="sha512-1f7ljznrhYNzpqz3iyV2F7nev0DBHEW6bOJlnom48+qUbLQQnXmOAV2kOOJX47DR1GTMhVXt+PUEg1YmTpiXqg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard.min.js" integrity="sha512-NeTydZ7vUQvmd3WatpSlY/w78ELce6GsK6YHXkpwFn28wiqPmpd1QWv2+Z/CwgOHQFqL5DAXvoZdQBqBH2302w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard.min.css" rel="stylesheet" />
+
+<script>
+  // Ensure mobile support: allow board to fit height 600px and width max 600px
+  function resizeBoard() {
+    const wrapper = document.getElementById('wrapper');
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    // We fix height to 600 or smaller for mobile devices
+    let size = Math.min(600, windowWidth * 0.95, windowHeight * 0.8);
+    wrapper.style.height = size + 'px';
+    wrapper.style.maxHeight = size + 'px';
+  }
+
+  window.addEventListener('resize', resizeBoard);
+  window.addEventListener('orientationchange', resizeBoard);
+
+  resizeBoard();
+
+  var board = null;
+  var game = new Chess();
+  var statusEl = document.getElementById('status');
+
+  // Update the status message
+  function updateStatus() {
+    var status = '';
+
+    var moveColor = 'White';
+    if (game.turn() === 'b') {
+      moveColor = 'Black';
+    }
+
+    if (game.in_checkmate()) {
+      status = 'Game over, ' + moveColor + ' is in checkmate.';
+    } else if (game.in_draw()) {
+      status = 'Game over, drawn position.';
+    } else {
+      status = moveColor + ' to move';
+
+      if (game.in_check()) {
+        status += ', ' + moveColor + ' is in check';
+      }
+    }
+
+    statusEl.textContent = status;
+  }
+
+  // Handle piece drop
+  function onDrop(source, target, piece, newPos, oldPos, orientation) {
+    // See if the move is legal
+    var move = game.move({
+      from: source,
+      to: target,
+      promotion: 'q' // always promote to a queen for simplicity
+    });
+
+    // Illegal move
+    if (move === null) return 'snapback';
+
+    updateStatus();
+
+    window.setTimeout(makeRandomMove, 500);
+  }
+
+  // Make a random move for the AI opponent
+  function makeRandomMove() {
+    if (game.game_over()) {
+      return;
+    }
+
+    var possibleMoves = game.moves();
+
+    if (possibleMoves.length === 0) return; // no moves
+
+    var randomIndex = Math.floor(Math.random() * possibleMoves.length);
+    game.move(possibleMoves[randomIndex]);
+
+    board.position(game.fen());
+    updateStatus();
+  }
+
+  // Update the board position after the piece snap for castling, etc
+  function onSnapEnd() {
+    board.position(game.fen());
+  }
+
+  var config = {
+    draggable: true,
+    position: 'start',
+    onDrop: onDrop,
+    onSnapEnd: onSnapEnd,
+    pieceTheme: 'https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/img/chesspieces/wikipedia/{piece}.png'
+  };
+  board = Chessboard('board', config);
+
+  updateStatus();
+</script>
+</body>
+</html>
+
+```
